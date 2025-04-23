@@ -35,12 +35,15 @@ def get_repos_created_last_30_days(github_token, org_name):
         for repo in repos:
             created_at = datetime.datetime.strptime(repo['created_at'], "%Y-%m-%dT%H:%M:%SZ").date()
             if thirty_days_ago <= created_at <= today:
-                creator = get_repo_creator(repo['full_name'], headers)
-                last_updated_by = get_last_updated_by(repo['full_name'], headers)
-                has_pre_commit_config = check_pre_commit_config(repo['full_name'], headers)
-                has_gitleaks_workflow = check_gitleaks_workflow(repo['full_name'], headers)
-                custom_properties = get_repo_custom_properties(repo['full_name'], headers)
-                branch_protection_enabled = check_branch_protection(repo['full_name'], repo['default_branch'], headers)
+                default_branch = repo['default_branch']
+                full_name = repo['full_name']
+
+                creator = get_repo_creator(full_name, headers)
+                last_updated_by = get_last_updated_by(full_name, headers)
+                has_pre_commit_config = check_pre_commit_config(full_name, headers)
+                has_gitleaks_workflow = check_gitleaks_workflow(full_name, headers)
+                custom_properties = get_repo_custom_properties(full_name, headers)
+                branch_protection_enabled = check_branch_protection(full_name, default_branch, headers)
                 rulesets_enabled = check_rulesets(org_name, repo['name'], headers)
 
                 repo_list.append({
@@ -52,7 +55,8 @@ def get_repos_created_last_30_days(github_token, org_name):
                     'has_gitleaks_workflow': has_gitleaks_workflow,
                     'repo_type': custom_properties,
                     'branch_protection_enabled': branch_protection_enabled,
-                    'rulesets_enabled': rulesets_enabled
+                    'rulesets_enabled': rulesets_enabled,
+                    'default_branch': default_branch
                 })
 
         page += 1
@@ -150,7 +154,8 @@ if __name__ == "__main__":
                 'Has gitleaks_secret_scan.yml',
                 'Repo_Type',
                 'Branch Protection Enabled',
-                'Rulesets Enabled'
+                'Rulesets Enabled',
+                'Default Branch'
             ])
             for repo in repos_last_30_days:
                 writer.writerow([
@@ -162,7 +167,8 @@ if __name__ == "__main__":
                     repo['has_gitleaks_workflow'],
                     repo['repo_type'],
                     repo['branch_protection_enabled'],
-                    repo['rulesets_enabled']
+                    repo['rulesets_enabled'],
+                    repo['default_branch']
                 ])
         print(f"Results saved to '{filename}'")
     else:
